@@ -57,13 +57,21 @@ def upload(video: Path, token: str, chat_id: str) -> None:
 
 
 def colab_secret(name: str) -> str | None:
-    if "IPKernelApp" not in sys.modules:
+    if not is_notebook_launcher():
         return None
     try:
         from google.colab import userdata
     except ImportError:
         return None
     return userdata.get(name)
+
+
+def is_notebook_launcher() -> bool:
+    launcher = Path(sys.argv[0]).name
+    return (
+        launcher in {"colab_kernel_launcher.py", "ipykernel_launcher.py"}
+        or "-f" in sys.argv[1:]
+    )
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -114,7 +122,7 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     try:
-        # IPython injects its own arguments when this file is executed in a notebook.
-        sys.exit(main([] if "IPKernelApp" in sys.modules else None))
+        # Notebook launchers inject arguments such as "-f kernel.json".
+        sys.exit(main([] if is_notebook_launcher() else None))
     except KeyboardInterrupt:
         sys.exit("Interrupted")
