@@ -40,6 +40,8 @@ urllib.request.urlretrieve(
     "video_to_telegram.py",
 )
 subprocess.run([sys.executable, "-c", """
+import sys
+sys.argv = ["video_to_telegram.py"]
 import runpy
 runpy.run_path("video_to_telegram.py", run_name="__main__")
 """], check=True)

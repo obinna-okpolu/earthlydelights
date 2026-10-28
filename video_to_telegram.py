@@ -56,7 +56,7 @@ def upload(video: Path, token: str, chat_id: str) -> None:
         raise RuntimeError(f"Telegram rejected the upload: {result}")
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Download, compress, and send videos to Telegram")
     parser.add_argument("--url", action="append", help="Video URL; repeat for multiple URLs")
     parser.add_argument("--urls-file", help="Text file containing one video URL per line")
@@ -65,7 +65,7 @@ def main() -> int:
     parser.add_argument("--crf", default=os.getenv("VIDEO_CRF", "28"))
     parser.add_argument("--preset", default=os.getenv("VIDEO_PRESET", "medium"))
     parser.add_argument("--max-bytes", type=int, default=int(os.getenv("MAX_DOWNLOAD_BYTES", str(2 * 1024**3))))
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     urls = list(args.url or [])
     if args.urls_file:
         urls.extend(Path(args.urls_file).read_text().splitlines())
@@ -102,6 +102,7 @@ def main() -> int:
 
 if __name__ == "__main__":
     try:
-        sys.exit(main())
+        # IPython injects its own arguments when this file is executed via runpy.
+        sys.exit(main([] if "IPKernelApp" in sys.modules else None))
     except KeyboardInterrupt:
         sys.exit("Interrupted")
