@@ -12,11 +12,12 @@ The same standalone script can run without the VPS:
 
 1. Add repository secrets named `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID`.
 2. Open **Actions → Compress video and send to Telegram → Run workflow**.
-3. Paste the video URL and optionally adjust CRF.
+3. Paste one or more video URLs in the **URLs** field, one per line, and optionally adjust CRF.
 
-The workflow uses an ephemeral GitHub-hosted runner and deletes its files when the
-job ends. It is not a queue: submit one URL per workflow run, and GitHub's runner
-limits and Telegram's upload limits still apply.
+The workflow processes URLs sequentially, continues after an individual failure,
+and reports failures in the job log. It uses an ephemeral GitHub-hosted runner
+and deletes its files when the job ends; runner time, storage, and Telegram
+upload limits still apply.
 
 ### Google Colab
 
@@ -28,7 +29,10 @@ Paste this into one Colab cell and run it:
 
 import getpass, os, subprocess, sys, urllib.request
 
-os.environ["VIDEO_URL"] = input("Video URL: ").strip()
+os.environ["VIDEO_URLS"] = """
+https://example.com/first-video
+https://example.com/second-video
+""".strip()
 os.environ["TELEGRAM_BOT_TOKEN"] = getpass.getpass("Telegram bot token: ")
 os.environ["TELEGRAM_CHAT_ID"] = input("Telegram channel ID: ").strip()
 urllib.request.urlretrieve(

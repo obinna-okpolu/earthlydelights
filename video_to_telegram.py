@@ -56,33 +56,52 @@ def upload(video: Path, token: str, chat_id: str) -> None:
         raise RuntimeError(f"Telegram rejected the upload: {result}")
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser(description="Download, compress, and send one video to Telegram")
-    parser.add_argument("--url", default=os.getenv("VIDEO_URL"))
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Download, compress, and send videos to Telegram")
+    parser.add_argument("--url", action="append", help="Video URL; repeat for multiple URLs")
+    parser.add_argument("--urls-file", help="Text file containing one video URL per line")
     parser.add_argument("--token", default=os.getenv("TELEGRAM_BOT_TOKEN"))
     parser.add_argument("--chat-id", default=os.getenv("TELEGRAM_CHAT_ID"))
     parser.add_argument("--crf", default=os.getenv("VIDEO_CRF", "28"))
     parser.add_argument("--preset", default=os.getenv("VIDEO_PRESET", "medium"))
     parser.add_argument("--max-bytes", type=int, default=int(os.getenv("MAX_DOWNLOAD_BYTES", str(2 * 1024**3))))
     args = parser.parse_args()
-    if not all((args.url, args.token, args.chat_id)):
-        parser.error("--url, --token, and --chat-id are required (or set their environment variables)")
+    urls = list(args.url or [])
+    if args.urls_file:
+        urls.extend(Path(args.urls_file).read_text().splitlines())
+    urls.extend(os.getenv("VIDEO_URLS", "").splitlines())
+    if not urls and os.getenv("VIDEO_URL"):
+        urls.append(os.environ["VIDEO_URL"])
+    urls = [url.strip() for url in urls if url.strip() and not url.strip().startswith("#")]
+    if not urls or not all((args.token, args.chat_id)):
+        parser.error("at least one URL, --token, and --chat-id are required")
     if shutil.which("ffmpeg") is None:
         parser.error("ffmpeg is required but was not found on PATH")
 
-    with tempfile.TemporaryDirectory(prefix="video-to-telegram-") as temporary:
-        directory = Path(temporary)
-        source = download(args.url, directory, args.max_bytes)
-        compressed = directory / "compressed.mp4"
-        print(f"Downloaded {source.stat().st_size / 1024**2:.1f} MiB")
-        compress(source, compressed, args.crf, args.preset)
-        print(f"Compressed to {compressed.stat().st_size / 1024**2:.1f} MiB")
-        upload(compressed, args.token, args.chat_id)
-        print("Uploaded successfully; temporary files removed.")
+    failures = 0
+    for index, url in enumerate(urls, 1):
+        try:
+            with tempfile.TemporaryDirectory(prefix="video-to-telegram-") as temporary:
+                directory = Path(temporary)
+                source = download(url, directory, args.max_bytes)
+                compressed = directory / "compressed.mp4"
+                print(f"[{index}/{len(urls)}] Downloaded {source.stat().st_size / 1024**2:.1f} MiB")
+                compress(source, compressed, args.crf, args.preset)
+                print(f"[{index}/{len(urls)}] Compressed to {compressed.stat().st_size / 1024**2:.1f} MiB")
+                upload(compressed, args.token, args.chat_id)
+                print(f"[{index}/{len(urls)}] Uploaded successfully; temporary files removed.")
+        except Exception as error:
+            failures += 1
+            print(f"[{index}/{len(urls)}] FAILED: {url}: {error}", file=sys.stderr)
+    if failures:
+        print(f"Completed with {failures} failure(s) out of {len(urls)}.", file=sys.stderr)
+        return 1
+    print(f"Completed {len(urls)} upload(s).")
+    return 0
 
 
 if __name__ == "__main__":
     try:
-        main()
+        sys.exit(main())
     except KeyboardInterrupt:
         sys.exit("Interrupted")

@@ -3,8 +3,8 @@ name: Compress video and send to Telegram
 on:
   workflow_dispatch:
     inputs:
-      url:
-        description: URL of the video to download
+      urls:
+        description: Video URLs, one per line
         required: true
         type: string
       crf:
@@ -20,7 +20,7 @@ jobs:
     permissions:
       contents: read
     env:
-      VIDEO_URL: ${{ inputs.url }}
+      VIDEO_URLS: ${{ inputs.urls }}
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
       VIDEO_CRF: ${{ inputs.crf }}
