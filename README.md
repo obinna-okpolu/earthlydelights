@@ -4,6 +4,17 @@ This service accepts authorized video URLs, downloads one video, transcodes it w
 real video compression (`libx265`), uploads the result to a private Telegram
 channel, and removes temporary files.
 
+Inputs can be either direct `.mp4` links or ordinary web pages containing a
+supported embedded video. `yt-dlp` resolves the page to the media stream before
+`ffmpeg` compresses it, so you can submit a page such as:
+
+```text
+https://darknaija.com/2017/03/12/another-skype-babe-exposed-video/
+```
+
+The page must expose a playable, non-DRM video supported by `yt-dlp`; the script
+does not bypass logins, paywalls, DRM, or access controls.
+
 ## Free fallback options
 
 The same standalone script can run without the VPS:
@@ -12,7 +23,8 @@ The same standalone script can run without the VPS:
 
 1. Add repository secrets named `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID`.
 2. Open **Actions → Compress video and send to Telegram → Run workflow**.
-3. Paste one or more video URLs in the **URLs** field, one per line, and optionally adjust CRF.
+3. Paste one or more page or video URLs in the **URLs** field, one per line,
+   and optionally adjust CRF.
 
 The workflow processes URLs sequentially, continues after an individual failure,
 and reports failures in the job log. It uses an ephemeral GitHub-hosted runner

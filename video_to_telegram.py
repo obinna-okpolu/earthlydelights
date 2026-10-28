@@ -11,6 +11,8 @@ import yt_dlp
 
 
 def download(url: str, directory: Path, max_bytes: int) -> Path:
+    # yt-dlp resolves both direct media URLs and pages containing supported
+    # HTML5 video, Open Graph video, or embedded-player media.
     options = {
         "format": "bv*+ba/b",
         "outtmpl": str(directory / "source.%(ext)s"),
@@ -75,9 +77,18 @@ def is_notebook_launcher() -> bool:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Download, compress, and send videos to Telegram")
-    parser.add_argument("--url", action="append", help="Video URL; repeat for multiple URLs")
-    parser.add_argument("--urls-file", help="Text file containing one video URL per line")
+    parser = argparse.ArgumentParser(
+        description="Resolve page/video URLs, compress videos, and send them to Telegram"
+    )
+    parser.add_argument(
+        "--url",
+        action="append",
+        help="Page URL or direct video URL; repeat for multiple URLs",
+    )
+    parser.add_argument(
+        "--urls-file",
+        help="Text file containing one page or video URL per line",
+    )
     parser.add_argument("--token", default=os.getenv("TELEGRAM_BOT_TOKEN"))
     parser.add_argument("--chat-id", default=os.getenv("TELEGRAM_CHAT_ID"))
     parser.add_argument("--crf", default=os.getenv("VIDEO_CRF", "28"))
