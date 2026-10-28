@@ -1,0 +1,35 @@
+name: Compress video and send to Telegram
+
+on:
+  workflow_dispatch:
+    inputs:
+      urls:
+        description: Video URLs, one per line
+        required: true
+        type: string
+      crf:
+        description: HEVC quality (higher means smaller/lower quality)
+        required: false
+        default: "28"
+        type: string
+
+jobs:
+  process:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+    env:
+      VIDEO_URLS: ${{ inputs.urls }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      VIDEO_CRF: ${{ inputs.crf }}
+      MAX_DOWNLOAD_BYTES: "2147483648"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install ffmpeg
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+      - name: Install Python dependencies
+        run: python -m pip install --disable-pip-version-check httpx yt-dlp
+      - name: Process and upload video
+        run: python video_to_telegram.py

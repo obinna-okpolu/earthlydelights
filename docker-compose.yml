@@ -1,0 +1,17 @@
+services:
+  video-worker:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - worker-data:/data
+    read_only: true
+    tmpfs:
+      - /tmp/video-worker:size=4g
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  worker-data:
