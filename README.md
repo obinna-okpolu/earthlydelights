@@ -27,29 +27,30 @@ Paste this into one Colab cell and run it:
 !apt-get -qq update && apt-get -qq install -y ffmpeg
 !pip -q install httpx yt-dlp
 
-import getpass, os, subprocess, sys, urllib.request
+import os, subprocess, sys, urllib.request
 
 os.environ["VIDEO_URLS"] = """
 https://example.com/first-video
 https://example.com/second-video
 """.strip()
-os.environ["TELEGRAM_BOT_TOKEN"] = getpass.getpass("Telegram bot token: ")
-os.environ["TELEGRAM_CHAT_ID"] = input("Telegram channel ID: ").strip()
 urllib.request.urlretrieve(
     "https://raw.githubusercontent.com/obinna-okpolu/earthlydelights/main/video_to_telegram.py",
     "video_to_telegram.py",
 )
 subprocess.run([sys.executable, "-c", """
 import sys
-sys.argv = ["video_to_telegram.py"]
+sys.argv = ["video_to_telegram.py", "--colab-secrets"]
 import runpy
 runpy.run_path("video_to_telegram.py", run_name="__main__")
 """], check=True)
 ```
 
-Do not save a notebook containing the bot token. If the repository is private,
-upload `video_to_telegram.py` with Colab's folder icon instead of using the raw
-GitHub URL.
+Before running it, add `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` under
+Colab's **Secrets** panel and enable notebook access for each secret. The script
+reads them with `google.colab.userdata.get`; they are not placed in notebook
+code or environment variables. If the repository is private, upload
+`video_to_telegram.py` with Colab's folder icon instead of using the raw GitHub
+URL.
 
 ## Deploy
 
