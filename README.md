@@ -39,7 +39,7 @@ urllib.request.urlretrieve(
 )
 subprocess.run([sys.executable, "-c", """
 import sys
-sys.argv = ["video_to_telegram.py", "--colab-secrets"]
+sys.argv = ["video_to_telegram.py"]
 import runpy
 runpy.run_path("video_to_telegram.py", run_name="__main__")
 """], check=True)
@@ -47,8 +47,8 @@ runpy.run_path("video_to_telegram.py", run_name="__main__")
 
 Before running it, add `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` under
 Colab's **Secrets** panel and enable notebook access for each secret. The script
-reads them with `google.colab.userdata.get`; they are not placed in notebook
-code or environment variables. If the repository is private, upload
+automatically reads them with `google.colab.userdata.get`; they are not placed
+in notebook code or environment variables. If the repository is private, upload
 `video_to_telegram.py` with Colab's folder icon instead of using the raw GitHub
 URL.
 

@@ -56,28 +56,28 @@ def upload(video: Path, token: str, chat_id: str) -> None:
         raise RuntimeError(f"Telegram rejected the upload: {result}")
 
 
+def colab_secret(name: str) -> str | None:
+    if "IPKernelApp" not in sys.modules:
+        return None
+    try:
+        from google.colab import userdata
+    except ImportError:
+        return None
+    return userdata.get(name)
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Download, compress, and send videos to Telegram")
     parser.add_argument("--url", action="append", help="Video URL; repeat for multiple URLs")
     parser.add_argument("--urls-file", help="Text file containing one video URL per line")
     parser.add_argument("--token", default=os.getenv("TELEGRAM_BOT_TOKEN"))
     parser.add_argument("--chat-id", default=os.getenv("TELEGRAM_CHAT_ID"))
-    parser.add_argument(
-        "--colab-secrets",
-        action="store_true",
-        help="Read Telegram credentials from Google Colab userdata",
-    )
     parser.add_argument("--crf", default=os.getenv("VIDEO_CRF", "28"))
     parser.add_argument("--preset", default=os.getenv("VIDEO_PRESET", "medium"))
     parser.add_argument("--max-bytes", type=int, default=int(os.getenv("MAX_DOWNLOAD_BYTES", str(2 * 1024**3))))
     args = parser.parse_args(argv)
-    if args.colab_secrets:
-        try:
-            from google.colab import userdata
-        except ImportError:
-            parser.error("--colab-secrets is only available in Google Colab")
-        args.token = userdata.get("TELEGRAM_BOT_TOKEN")
-        args.chat_id = userdata.get("TELEGRAM_CHAT_ID")
+    args.token = args.token or colab_secret("TELEGRAM_BOT_TOKEN")
+    args.chat_id = args.chat_id or colab_secret("TELEGRAM_CHAT_ID")
     urls = list(args.url or [])
     if args.urls_file:
         urls.extend(Path(args.urls_file).read_text().splitlines())
@@ -114,7 +114,7 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     try:
-        # IPython injects its own arguments when this file is executed via runpy.
+        # IPython injects its own arguments when this file is executed in a notebook.
         sys.exit(main([] if "IPKernelApp" in sys.modules else None))
     except KeyboardInterrupt:
         sys.exit("Interrupted")
